@@ -1,0 +1,136 @@
+# ============================================================
+# NightShift AI — Fichier de configuration principal
+# Copier ce fichier en config/config.local.yaml pour personnaliser
+# sans jamais mettre de secrets ici (les secrets vont dans /opt/nightshift/secrets/)
+# ============================================================
+
+app:
+  name: "NightShift AI"
+  environment: "production"     # production | development
+  timezone: "Europe/Paris"
+  log_level: "INFO"             # DEBUG | INFO | WARNING | ERROR
+  api_host: "127.0.0.1"
+  api_port: 8420
+
+database:
+  host: "127.0.0.1"
+  port: 5432
+  name: "nightshift_db"
+  user: "nightshift_user"
+  # mot de passe lu depuis secrets/db_password.key, jamais ici
+
+# ------------------------------------------------------------
+# Fournisseurs IA — Ollama prioritaire et gratuit par défaut.
+# Les fournisseurs payants restent désactivés tant que tu ne
+# passes pas paid_enabled à true toi-même.
+# ------------------------------------------------------------
+providers:
+  ollama:
+    enabled: true
+    base_url: "http://127.0.0.1:11434"
+    model: "qwen2.5-coder:7b"   # change selon ce que tu as téléchargé avec `ollama pull`
+    priority: 1
+
+  openai:
+    enabled: false
+    paid_enabled: false
+    model: "gpt-4o-mini"
+    priority: 2
+    # clé lue depuis secrets/openai_api_key.key
+
+  anthropic:
+    enabled: false
+    paid_enabled: false
+    model: "claude-sonnet-4-6"
+    priority: 3
+    # clé lue depuis secrets/anthropic_api_key.key
+
+# ------------------------------------------------------------
+# Scheduler / relances automatiques
+# ------------------------------------------------------------
+scheduler:
+  retry_interval_minutes: 60
+  max_retries_before_alert: 5
+
+# ------------------------------------------------------------
+# Mode économie — le ThinkPad est une machine ancienne
+# ------------------------------------------------------------
+performance:
+  max_parallel_agents: 1
+  max_memory_usage_mb: 3000
+  sleep_when_idle: true
+  idle_poll_seconds: 30
+
+# ------------------------------------------------------------
+# Sécurité
+# ------------------------------------------------------------
+security:
+  linux_user: "nightshift"
+  workspace_root: "/opt/nightshift/projects"
+  forbidden_paths:
+    - "/root"
+    - "/etc/shadow"
+    - "/home"
+    - "/etc/nightshift/secrets_never_here"
+  command_allowlist:
+    - "git"
+    - "python"
+    - "python3"
+    - "pip"
+    - "pytest"
+    - "npm"
+    - "node"
+    - "cargo"
+    - "make"
+  require_human_validation_for:
+    - "rm"
+    - "sudo"
+    - "chmod"
+    - "chown"
+    - "curl"
+    - "wget"
+    - "systemctl"
+
+# ------------------------------------------------------------
+# Git / checkpoints
+# ------------------------------------------------------------
+git:
+  auto_checkpoint: true
+  branch_prefix: "nightshift"
+
+# ------------------------------------------------------------
+# Alertes
+# ------------------------------------------------------------
+alerts:
+  disk_percent_threshold: 90
+  ram_percent_threshold: 90
+  cpu_percent_threshold: 95
+  notify_via: "log"   # log | discord | telegram (à activer plus tard)
+
+# ------------------------------------------------------------
+# Cloudflare — tu n'as pas encore de nom de domaine :
+# on utilise un "quick tunnel" gratuit (URL *.trycloudflare.com,
+# change à chaque redémarrage du tunnel). Le jour où tu achètes
+# un domaine, passe use_named_tunnel à true et remplis "domain".
+# ------------------------------------------------------------
+cloudflare:
+  use_named_tunnel: false
+  domain: ""
+
+# ------------------------------------------------------------
+# Odoo (V2 — pas nécessaire pour démarrer)
+# ------------------------------------------------------------
+odoo:
+  enabled: false
+  url: "http://127.0.0.1:8069"
+  db: "nightshift"
+
+# ------------------------------------------------------------
+# Projets gérés par NightShift
+# ------------------------------------------------------------
+projects:
+  - id: "project_island"
+    name: "Project Island"
+    workspace: "/opt/nightshift/projects/project_island"
+    git_remote: ""   # à remplir avec ton dépôt GitHub
+    agents: ["planner", "coder", "tester", "reviewer"]

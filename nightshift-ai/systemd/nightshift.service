@@ -1,0 +1,28 @@
+[Unit]
+Description=NightShift AI - orchestrateur autonome d'agents IA
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=nightshift
+Group=nightshift
+WorkingDirectory=/opt/nightshift
+Environment=NIGHTSHIFT_HOME=/opt/nightshift
+ExecStart=/opt/nightshift/venv/bin/python3 -m app.main
+Restart=on-failure
+RestartSec=15
+
+# Renforcement sécurité (systemd sandboxing)
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/nightshift/data /opt/nightshift/logs /opt/nightshift/backups /opt/nightshift/projects
+PrivateTmp=true
+
+# Logs -> journald (consultables avec : journalctl -u nightshift -f)
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

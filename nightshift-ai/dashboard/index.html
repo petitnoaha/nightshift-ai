@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>🌙 NightShift AI</title>
+<style>
+  body { background:#0d1117; color:#e6edf3; font-family: monospace; padding:2rem; }
+  h1 { color:#58a6ff; }
+  .card { background:#161b22; border:1px solid #30363d; border-radius:8px; padding:1rem 1.5rem; margin-bottom:1rem; }
+  .bar-bg { background:#30363d; border-radius:4px; overflow:hidden; height:18px; }
+  .bar-fg { background:#3fb950; height:100%; }
+  .label { color:#8b949e; font-size:0.85rem; }
+  .status-running { color:#3fb950; }
+</style>
+</head>
+<body>
+<h1>🌙 NIGHTSHIFT AI</h1>
+<div id="app">Chargement...</div>
+
+<script>
+async function fetchJSON(url) {
+  const r = await fetch(url);
+  return r.json();
+}
+
+function bar(percent) {
+  const p = Math.max(0, Math.min(100, percent ?? 0));
+  return `<div class="bar-bg"><div class="bar-fg" style="width:${p}%"></div></div>`;
+}
+
+async function render() {
+  const status = await fetchJSON('/api/status');
+  const sys = await fetchJSON('/api/system');
+
+  let html = `<div class="card">
+    <div class="label">SYSTÈME (ThinkPad)</div>
+    CPU ${sys.cpu_percent}% ${bar(sys.cpu_percent)}
+    RAM ${sys.ram_percent}% ${bar(sys.ram_percent)}
+    DISQUE ${sys.disk_percent}% ${bar(sys.disk_percent)}
+    Température : ${sys.temperature_celsius ?? 'N/A'}
+  </div>`;
+
+  for (const p of status.projects) {
+    const stats = await fetchJSON(`/api/projects/${p.id}/stats`);
+    const score = await fetchJSON(`/api/projects/${p.id}/score`);
+    html += `<div class="card">
+      <div class="label">PROJET</div>
+      <h2>${p.name}</h2>
+      <span class="status-running">🟢 ${p.state}</span>
+      <div class="label">PROGRESSION</div>
+      ${bar(p.progress_percent)} ${p.progress_percent}%
+      <div class="label">TÂCHES</div>
+      ${stats.tasks_done} / ${stats.tasks_total} terminées
+      <div class="label">TESTS</div>
+      ${stats.tests_passed} passés / ${stats.tests_failed} échoués
+      <div class="label">NIGHTSHIFT SCORE</div>
+      <strong>${score.score} / 100</strong>
+      <div class="label">(${score.formula})</div>
+    </div>`;
+  }
+
+  document.getElementById('app').innerHTML = html;
+}
+
+render();
+setInterval(render, 15000);
+</script>
+</body>
+</html>
